@@ -1,0 +1,34 @@
+﻿<Window x:Class="WeatherAppUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WeatherAppUI"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="362"
+        Loaded="Window_Loaded">
+    <Grid>
+        <StackPanel>
+            <Label Content="Координаты"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBox Text="54.991375" TextWrapping="Wrap" Width="100" Name="latTextBox"/>
+                <TextBox Text="73.371529" TextWrapping="Wrap" Width="100" Name="LonTextBox"/>
+            </StackPanel>
+            <Label Content="Дата"/>
+            <TextBox Text="2023-02-12" TextWrapping="Wrap" Name="DateTextBox"/>
+            <Label Content="Время"/>
+            <TextBox Text="17:00:00" TextWrapping="Wrap" Name="TimeTextBox"/>
+            <Button Content="Get weather" Width="120" Name="GetWeatherButton" Click="GetWeatherButton_Click"/>
+            <TextBlock TextWrapping="Wrap" Text="" Name="WeatherOutputTextBlock"/>
+            <Button Content="Copy to clipboard" Width="120" Name="CopyToClipBoardButton" Click="CopyToClipBoardButton_Click"/>
+            <Label Content="Настройки скрипта"/>
+            <Label Content="Путь до папки со скриптом"/>
+            <TextBox Text="B:\Code\PycharmProjects\WeatherScript" TextWrapping="Wrap" Name="ScriptDirPath"/>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Название скрипта" Width="120"/>
+                <TextBox Text="main.py" TextWrapping="Wrap" Width="120" Name="ScriptName"/>
+            </StackPanel>
+        </StackPanel>
+
+    </Grid>
+</Window>
