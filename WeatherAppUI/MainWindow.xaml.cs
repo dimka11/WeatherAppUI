@@ -109,12 +109,17 @@ namespace WeatherAppUI
             Clipboard.SetText(WeatherOutputTextBlock.Text);
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void SetCurrentDateToUi()
         {
             string currentDateTime = GetDateTime();
             DateTextBox.Text = currentDateTime.Split(' ')[0];
             TimeTextBox.Text = currentDateTime.Split(' ')[1];
             CopyToClipBoardButton.IsEnabled = false;
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            SetCurrentDateToUi();
         }
 
         private async void LocNameTextBox_OnKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
