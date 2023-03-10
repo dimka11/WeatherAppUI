@@ -18,7 +18,7 @@ namespace WeatherAppUI
         private string GetDateTime()
         {
             DateTime localDate = DateTime.Now;
-            return localDate.ToString("yyy-MM-d HH:mm:ss");
+            return localDate.ToString("yyy-MM-dd HH:mm:ss");
         }
 
         private void GetWeatherButton_Click(object sender, RoutedEventArgs e)
@@ -27,7 +27,7 @@ namespace WeatherAppUI
             System.Diagnostics.Process process = new System.Diagnostics.Process();
             startInfo.UseShellExecute = false;
             startInfo.FileName = "python";
-            startInfo.Arguments = $"{ScriptName.Text} --date \"{DateTextBox.Text} {TimeTextBox.Text}\"";
+            startInfo.Arguments = $"{ScriptName.Text} --date \"{DateTextBox.Text} {TimeTextBox.Text}\" --lat {LatTextBox.Text} --lon {LonTextBox.Text}";
             startInfo.WorkingDirectory = ScriptDirPath.Text;
             startInfo.RedirectStandardOutput = true;
             startInfo.RedirectStandardError = true;

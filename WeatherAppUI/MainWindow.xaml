@@ -11,8 +11,8 @@
         <StackPanel>
             <Label Content="Координаты"/>
             <StackPanel Orientation="Horizontal">
-                <TextBox Text="54.991375" TextWrapping="Wrap" Width="100" Name="latTextBox"/>
-                <TextBox Text="73.371529" TextWrapping="Wrap" Width="100" Name="LonTextBox"/>
+                <TextBox Text="55.0" TextWrapping="Wrap" Width="100" Name="LatTextBox"/>
+                <TextBox Text="73.37" TextWrapping="Wrap" Width="100" Name="LonTextBox"/>
             </StackPanel>
             <Label Content="Дата"/>
             <TextBox Text="2023-02-12" TextWrapping="Wrap" Name="DateTextBox"/>
