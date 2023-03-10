@@ -54,7 +54,7 @@ namespace WeatherAppUI
             }
         }
 
-        private void GetWeatherButton_Click(object sender, RoutedEventArgs e)
+        private Tuple<string, string> GetWeather()
         {
             System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
             System.Diagnostics.Process process = new System.Diagnostics.Process();
@@ -78,11 +78,17 @@ namespace WeatherAppUI
 
             standardOutput.Append(process.StandardOutput.ReadToEnd());
             standardError.Append(process.StandardOutput.ReadToEnd());
+            return new Tuple<string, string>(standardOutput.ToString(), standardError.ToString());
+        }
 
-            WeatherOutputTextBlock.Text = standardOutput.ToString();
-            string errorContent = standardError.ToString();
 
-            if (WeatherOutputTextBlock.Text.Length > 0) {
+        private void SetWeatherTextToUi(string weatherText, string error)
+        {
+            WeatherOutputTextBlock.Text = weatherText;
+            string errorContent = error;
+
+            if (WeatherOutputTextBlock.Text.Length > 0)
+            {
                 CopyToClipBoardButton.IsEnabled = true;
             }
 
@@ -90,6 +96,12 @@ namespace WeatherAppUI
             {
                 MessageBox.Show(errorContent, "Произошла ошибка");
             }
+        }
+
+        private void GetWeatherButton_Click(object sender, RoutedEventArgs e)
+        {
+            var weatherText = GetWeather();
+            SetWeatherTextToUi(weatherText.Item1, weatherText.Item2);
         }
 
         private void CopyToClipBoardButton_Click(object sender, RoutedEventArgs e)
@@ -114,6 +126,13 @@ namespace WeatherAppUI
             var coordinates =  await GetCoordinatesFromLocationName(LocNameCountryTextBox.Text, LocNameCityTextBox.Text);
             LatTextBox.Text = coordinates.Item1.ToString("0.##", CultureInfo.InvariantCulture);
             LonTextBox.Text = coordinates.Item2.ToString("0.##", CultureInfo.InvariantCulture);
+        }
+
+        private void TimeTextBox_OnKeyUp(object sender, KeyEventArgs e)
+        {
+            e.Handled = true;
+            var weatherText = GetWeather();
+            SetWeatherTextToUi(weatherText.Item1, weatherText.Item2);
         }
     }
 }

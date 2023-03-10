@@ -13,13 +13,13 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <TextBox Text="55.0" TextWrapping="Wrap" Width="60" Name="LatTextBox" Margin="5 0"/>
                 <TextBox Text="73.37" TextWrapping="Wrap" Width="60" Name="LonTextBox" Margin="5 0"/>
-                <TextBox Text="Russia" TextWrapping="Wrap" Width="80" Name="LocNameCountryTextBox" Margin="5 0"/>
+                <TextBox Text="Russia" TextWrapping="Wrap" Width="80" Name="LocNameCountryTextBox" Margin="5 0" KeyUp="LocNameTextBox_OnKeyUp"/>
                 <TextBox Text="Omsk" TextWrapping="Wrap" Width="80" Name="LocNameCityTextBox" KeyUp="LocNameTextBox_OnKeyUp" Margin="5 0"/>
             </StackPanel>
             <Label Content="Дата"/>
             <TextBox Text="2023-02-12" TextWrapping="Wrap" Name="DateTextBox" Margin="5 0"/>
             <Label Content="Время"/>
-            <TextBox Text="17:00:00" TextWrapping="Wrap" Name="TimeTextBox" Margin="5 0 5 10"/>
+            <TextBox Text="17:00:00" TextWrapping="Wrap" Name="TimeTextBox" Margin="5 0 5 10" KeyUp="TimeTextBox_OnKeyUp"/>
             <Button Content="Get weather" Width="120" Name="GetWeatherButton" Click="GetWeatherButton_Click"/>
             <TextBlock TextWrapping="Wrap" Text="" Name="WeatherOutputTextBlock"/>
             <Button Content="Copy to clipboard" Width="120" Name="CopyToClipBoardButton" Click="CopyToClipBoardButton_Click"/>
