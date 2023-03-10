@@ -1,6 +1,15 @@
 ﻿using System;
+using System.Globalization;
+using System.Net.Http;
 using System.Text;
 using System.Windows;
+using System.Windows.Input;
+using System.Configuration;
+using System.Collections.Specialized;
+using System.Net;
+using System.Threading.Tasks;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 
 namespace WeatherAppUI
@@ -19,6 +28,30 @@ namespace WeatherAppUI
         {
             DateTime localDate = DateTime.Now;
             return localDate.ToString("yyy-MM-dd HH:mm:ss");
+        }
+
+        private async Task<Tuple<double, double>> GetCoordinatesFromLocationName(string country, string city)
+        {
+            var httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri("https://api.openweathermap.org/");
+
+            try
+            {
+                string? apiKey = ConfigurationManager.AppSettings.Get("api_key");
+                var response = await httpClient.GetAsync($"geo/1.0/direct?q={city},{country}&limit=1&appid={apiKey}");
+                var jsonString = await response.Content.ReadAsStringAsync();
+
+                var jsonArray = JsonNode.Parse(jsonString)!.AsArray();
+                var lat = jsonArray[0]["lat"].GetValue<double>();
+                var lon = jsonArray[0]["lon"].GetValue<double>();
+
+                return new Tuple<double, double>(lat, lon);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                return new Tuple<double, double>(55.0, 73.37);
+            }
         }
 
         private void GetWeatherButton_Click(object sender, RoutedEventArgs e)
@@ -47,15 +80,15 @@ namespace WeatherAppUI
             standardError.Append(process.StandardOutput.ReadToEnd());
 
             WeatherOutputTextBlock.Text = standardOutput.ToString();
-            string ErrorContent = standardError.ToString();
+            string errorContent = standardError.ToString();
 
             if (WeatherOutputTextBlock.Text.Length > 0) {
                 CopyToClipBoardButton.IsEnabled = true;
             }
 
-            if (ErrorContent.Length > 0)
+            if (errorContent.Length > 0)
             {
-                MessageBox.Show(ErrorContent, "Произошла ошибка");
+                MessageBox.Show(errorContent, "Произошла ошибка");
             }
         }
 
@@ -66,10 +99,21 @@ namespace WeatherAppUI
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            string CurrentDateTime = GetDateTime();
-            DateTextBox.Text = CurrentDateTime.Split(' ')[0];
-            TimeTextBox.Text = CurrentDateTime.Split(' ')[1];
+            string currentDateTime = GetDateTime();
+            DateTextBox.Text = currentDateTime.Split(' ')[0];
+            TimeTextBox.Text = currentDateTime.Split(' ')[1];
             CopyToClipBoardButton.IsEnabled = false;
+        }
+
+        private async void LocNameTextBox_OnKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key != System.Windows.Input.Key.Enter) return;
+
+            e.Handled = true;
+
+            var coordinates =  await GetCoordinatesFromLocationName(LocNameCountryTextBox.Text, LocNameCityTextBox.Text);
+            LatTextBox.Text = coordinates.Item1.ToString("0.##", CultureInfo.InvariantCulture);
+            LonTextBox.Text = coordinates.Item2.ToString("0.##", CultureInfo.InvariantCulture);
         }
     }
 }
