@@ -135,6 +135,8 @@ namespace WeatherAppUI
 
         private void TimeTextBox_OnKeyUp(object sender, KeyEventArgs e)
         {
+            if (e.Key != System.Windows.Input.Key.Enter) return;
+
             e.Handled = true;
             var weatherText = GetWeather();
             SetWeatherTextToUi(weatherText.Item1, weatherText.Item2);
