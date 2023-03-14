@@ -42,8 +42,8 @@ namespace WeatherAppUI
                 var jsonString = await response.Content.ReadAsStringAsync();
 
                 var jsonArray = JsonNode.Parse(jsonString)!.AsArray();
-                var lat = jsonArray[0]["lat"].GetValue<double>();
-                var lon = jsonArray[0]["lon"].GetValue<double>();
+                var lat = jsonArray[0]!["lat"].GetValue<double>();
+                var lon = jsonArray[0]!["lon"].GetValue<double>();
 
                 return new Tuple<double, double>(lat, lon);
             }

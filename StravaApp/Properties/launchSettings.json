@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "StravaApp": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "STRAVA_CLIENT_ID": "61087",
+        "STRAVA_CLIENT_SECRET": "85f79db5ec4cafe55f970523205f23e2ca7a810f"
+      }
+    }
+  }
+}
