@@ -11,28 +11,98 @@ using System.Text;
 using StravaApp;
 
 
-var run = new Run();
-await run.StartAuthProcess();
-await run.GetAthleteInfo();
-var activity = await run.GetLastActivity();
-var exportActivityData = run.ExtractActivityData(activity);
-File.WriteAllText("./last_activity_data.json", JsonSerializer.Serialize(exportActivityData));
 
-string weatherText = new WeatherProvider().GetWeather(exportActivityData);
-
-if (!string.IsNullOrWhiteSpace(weatherText))
-{
-    await run.LastActivityEdit(activity, weatherText);
-    Console.WriteLine("done");
-}
-
-else
-{
-    Console.WriteLine("Failed to get the weather");
-}
+var main = await MainFabric.GetMain();
+// await main.AddWeatherToLastActivity();
+await main.RunWebHookSubscription();
 
 namespace StravaApp
 {
+    static class MainFabric
+    {
+        private static Main _main;
+        public static async Task<Main> GetMain()
+        {
+            _main = new Main();
+            await _main.Start();
+            return _main;
+        }
+    }
+    public class Main
+    {
+        private Run run;
+        public Main()
+        {
+            // Console.WriteLine("ctor running");
+        }
+        public async Task Start()
+        {
+            run = new Run();
+            await run.StartAuthProcess();
+        }
+
+        public async Task AddWeatherToLastActivity()
+        {
+            await run.GetAthleteInfo();
+            var activity = await run.GetLastActivity();
+            var exportActivityData = run.ExtractActivityData(activity);
+            File.WriteAllText("./last_activity_data.json", JsonSerializer.Serialize(exportActivityData));
+
+            string weatherText = new WeatherProvider().GetWeather(exportActivityData);
+
+
+            if (!string.IsNullOrWhiteSpace(weatherText))
+            {
+                await run.LastActivityEdit(activity, weatherText);
+                Console.WriteLine("done");
+            }
+
+            else
+            {
+                Console.WriteLine("Failed to get the weather");
+            }
+        }
+
+
+        public async Task RunWebHookSubscription()
+        {
+            JsonNode json_node = JsonNode.Parse(File.ReadAllText("webhook_id.json"))!.AsObject();
+            int id = (int)json_node["id"].AsValue();
+
+            Console.WriteLine("Hook waiting");
+
+            HttpListener listener = new HttpListener();
+            listener.Prefixes.Add("http://localhost:8080/hook/");
+            listener.Start();
+            Task<HttpListenerContext> context = listener.GetContextAsync();
+            await HandleRequestAsyncRun(await context);
+        }
+
+        async Task HandleRequestAsyncRun(HttpListenerContext context)
+        {
+            var request = context.Request;
+            var body = WebHookRequestHadler(request);
+            Console.Write(body);
+            var eventData = JsonSerializer.Deserialize<WebHookEventData>(body);
+            //TODO Call method
+        }
+
+        string WebHookRequestHadler(HttpListenerRequest request)
+        {
+            
+            if (!request.HasEntityBody)
+            {
+                return null;
+            }
+            using (System.IO.Stream body = request.InputStream) // here we have data
+            {
+                using (var reader = new System.IO.StreamReader(body, request.ContentEncoding))
+                {
+                    return reader.ReadToEnd();
+                }
+            }
+        }
+    }
 
     public class Run
     {
@@ -42,6 +112,11 @@ namespace StravaApp
         public Run()
         {
             _httpClient.BaseAddress = new Uri("https://www.strava.com");
+        }
+
+        public HttpClient GetHttpClient()
+        {
+            return _httpClient;
         }
 
         public async Task StartAuthProcess()
@@ -82,7 +157,11 @@ namespace StravaApp
             var bearer = this._token?.access_token;
             _httpClient.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", bearer);
+
+            await auth.CreateWebHookSubscription();
+
         }
+
 
         public async Task GetAthleteInfo()
         {
@@ -146,12 +225,12 @@ namespace StravaApp
 
         public async void CreateActivityManual()
         {
-
+            //TODO CreateActivityManual
         }
 
         public async void UploadActivity()
         {
-
+            //TODO UploadActivity
         }
     }
 
@@ -210,6 +289,7 @@ namespace StravaApp
     {
         private readonly AuthData _authData;
         private Token? _token;
+        private int _webhook_id;
         public static IConfiguration Config { get; private set; }
         public StravaAuth()
         {
@@ -284,6 +364,74 @@ namespace StravaApp
 
             return code;
         }
+
+        public async Task CreateWebHookSubscription()
+        {
+            if (!await CheckWebHookSubscription())
+            {
+                CreateWebHookServer();
+
+                var httpClient = new HttpClient();
+                httpClient.BaseAddress = new Uri("https://www.strava.com");
+                
+                var formData = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("client_id", _authData.ClientId),
+                    new KeyValuePair<string, string>("client_secret", _authData.ClientSecret),
+                    new KeyValuePair<string, string>("callback_url", "https://6bc8-95-189-145-46.ngrok.io/hook"),
+                    new KeyValuePair<string, string>("verify_token", "token"),
+                });
+                var result = await httpClient.PostAsync("api/v3/push_subscriptions", formData);
+                var content = await result.Content.ReadAsStringAsync();
+                Console.WriteLine(content);
+
+                JsonNode json_node = JsonNode.Parse(content)!.AsObject();
+                int id = (int)json_node["id"].AsValue();
+                this._webhook_id = id;
+                File.WriteAllText("./webhook_id.json", $"{{\"id\": {_webhook_id} }}");
+            }
+        }
+
+        public async Task CreateWebHookServer()
+        {
+            HttpListener listener = new HttpListener();
+            listener.Prefixes.Add("http://localhost:8080/hook/");
+            listener.Start();
+            Task<HttpListenerContext> context = listener.GetContextAsync();
+            await HandleRequestAsync(await context);
+        }
+        async Task HandleRequestAsync(HttpListenerContext context)
+        {
+            var query =  context.Request.Url.Query;
+
+            var parsedString = HttpUtility.HtmlDecode(query);
+            var hub_mode = HttpUtility.ParseQueryString(parsedString)["hub.mode"];
+            var hub_challenge = HttpUtility.ParseQueryString(parsedString)["hub.challenge"];
+            var hub_verify_token = HttpUtility.ParseQueryString(parsedString)["hub.verify_token"];
+
+            var response = context.Response;
+            response.StatusCode = 200;
+            response.ContentType = "application/json";
+            var responseString = $"{{ \"hub.challenge\":\"{hub_challenge}\" }}";
+            var responseBody = System.Text.Encoding.UTF8.GetBytes(responseString);
+            response.ContentLength64 = responseBody.Length;
+            response.OutputStream.Write(responseBody, 0, responseBody.Length);
+            response.Close();
+        }
+
+        public async Task<bool> CheckWebHookSubscription()
+        {
+            var httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri("https://www.strava.com");
+            var result = await httpClient.GetAsync($"api/v3/push_subscriptions?client_id={_authData.ClientId}&client_secret={_authData.ClientSecret}");
+            var contentString = await result.Content.ReadAsStringAsync();
+            if (contentString == "[]")
+            {
+                return false;
+            }
+            return true;
+        }
+
 
         public async Task<Token> TokenExchange()
         {
